@@ -1,15 +1,42 @@
-using CoreApi.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace CoreApi.Data
 {
-    public class CoreContext : DbContext
-    {
-        public CoreContext(DbContextOptions<CoreContext> options)
-            : base(options)
-        {
-        }
+    public class CoreContext : IdentityDbContext<UserInfo, Role, long, IdentityUserClaim<long>, UserRole, IdentityUserLogin<long>, IdentityRoleClaim<long>, IdentityUserToken<long>>
+{
+    public CoreContext(DbContextOptions<CoreContext> opt) : base(opt) { }
 
-        public DbSet<TodoItem> TodoItems { get; set; } = null!;
+
+    #region "User and Role"
+    public virtual DbSet<UserInfo> UserInfos { get; set; } = null!;
+    #endregion
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        #region "Configurations"
+        // modelBuilder.HasDbFunction(DateTruncMethod).HasName("date_trunc");
+        #endregion
+
+
+        #region "UserRole"      
+        modelBuilder.Entity<UserRole>(UserRole =>
+        {
+            UserRole.HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            UserRole.HasOne(ur => ur.Role)
+            .WithMany(r => r.UserRoles)
+            .HasForeignKey(ur => ur.RoleId)
+            .IsRequired();
+
+            UserRole.HasOne(ur => ur.User)
+            .WithMany(r => r.UserRoles)
+            .HasForeignKey(ur => ur.UserId)
+            .IsRequired();
+        });
+        #endregion
+
     }
+}
 }
